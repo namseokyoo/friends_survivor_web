@@ -392,15 +392,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // 메인 게임 루프 - 매 프레임마다 실행
   void _gameLoop() {
     final size = MediaQuery.of(context).size;
-    spawnTimer += 0.016;
-    fireTimer += 0.016;
-    gameTime += 0.016; // Increment game time
+    final deltaTime = _gameLoopController.lastElapsedDuration?.inMilliseconds ?? 16;
+    final seconds = deltaTime / 1000.0;
+
+    spawnTimer += seconds;
+    fireTimer += seconds;
+    gameTime += seconds;
 
     // 50초마다 적 생성 간격 감소
-    if (gameTime % 50 < 0.016) {
-      // 50초마다 실행
+    if (gameTime % 50 < seconds) {
       setState(() {
-        spawnInterval = math.max(0.5, spawnInterval - 0.2); // 최소값 0.5 유지
+        spawnInterval = math.max(0.5, spawnInterval - 0.2);
       });
     }
 
@@ -412,33 +414,32 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       _fireProjectile();
       fireTimer = 0;
     }
-    _updatePlayerPosition();
-    _updateEnemies();
-    _updateProjectiles();
+    _updatePlayerPosition(seconds);
+    _updateEnemies(seconds);
+    _updateProjectiles(seconds);
     _checkCollisions();
     _checkExperienceCollection();
   }
 
   // 플레이어 위치 업데이트 및 이동 처리
-  void _updatePlayerPosition() {
+  void _updatePlayerPosition(double seconds) {
     if (!_isUsingJoystick) {
-      // 조이스틱을 사용하지 않을 때만 키보드 입력 처리
       if (_pressedKeys.contains(LogicalKeyboardKey.arrowLeft)) {
-        velocityX -= moveSpeed;
+        velocityX -= moveSpeed * seconds;
       }
       if (_pressedKeys.contains(LogicalKeyboardKey.arrowRight)) {
-        velocityX += moveSpeed;
+        velocityX += moveSpeed * seconds;
       }
       if (_pressedKeys.contains(LogicalKeyboardKey.arrowUp)) {
-        velocityY -= moveSpeed;
+        velocityY -= moveSpeed * seconds;
       }
       if (_pressedKeys.contains(LogicalKeyboardKey.arrowDown)) {
-        velocityY += moveSpeed;
+        velocityY += moveSpeed * seconds;
       }
       velocityX = velocityX.clamp(-maxSpeed, maxSpeed);
       velocityY = velocityY.clamp(-maxSpeed, maxSpeed);
-      velocityX *= friction;
-      velocityY *= friction;
+      velocityX *= math.pow(friction, seconds);
+      velocityY *= math.pow(friction, seconds);
       if (velocityX.abs() < 0.1) velocityX = 0;
       if (velocityY.abs() < 0.1) velocityY = 0;
     }
@@ -452,7 +453,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   // 적  업데이트 및 관리
-  void _updateEnemies() {
+  void _updateEnemies(double seconds) {
     for (var enemy in enemies) {
       if (enemy.isActive) {
         enemy.moveTowardsPlayer(playerX, playerY);
@@ -462,7 +463,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   // 사체 위치 업데이트 및 관리
-  void _updateProjectiles() {
+  void _updateProjectiles(double seconds) {
     for (var projectile in projectiles) {
       if (projectile.isActive) {
         projectile.move();
@@ -767,10 +768,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       body: GestureDetector(
         onPanUpdate: (details) {
           setState(() {
-            playerX += details.delta.dx;
-            playerY += details.delta.dy;
-            playerX = playerX.clamp(0, MediaQuery.of(context).size.width - 50);
-            playerY = playerY.clamp(0, MediaQuery.of(context).size.height - 50);
+            velocityX = details.delta.dx * 0.1; // 스와이프 속도를 줄여 기본 속도 유지
+            velocityY = details.delta.dy * 0.1;
           });
         },
         child: Container(
