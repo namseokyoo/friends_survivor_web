@@ -764,191 +764,201 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Colors.black,
-        child: RawKeyboardListener(
-          focusNode: _focusNode,
-          autofocus: true,
-          onKey: (RawKeyEvent event) {
-            if (event is RawKeyDownEvent) {
-              _pressedKeys.add(event.logicalKey);
-            } else if (event is RawKeyUpEvent) {
-              _pressedKeys.remove(event.logicalKey);
-            }
-          },
-          child: Stack(
-            children: [
-              Positioned(
-                right: 10,
-                top: 10,
-                child: ElevatedButton(
-                  onPressed: _pauseGame,
-                  child: const Text('Pause'),
+      body: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            playerX += details.delta.dx;
+            playerY += details.delta.dy;
+            playerX = playerX.clamp(0, MediaQuery.of(context).size.width - 50);
+            playerY = playerY.clamp(0, MediaQuery.of(context).size.height - 50);
+          });
+        },
+        child: Container(
+          color: Colors.black,
+          child: RawKeyboardListener(
+            focusNode: _focusNode,
+            autofocus: true,
+            onKey: (RawKeyEvent event) {
+              if (event is RawKeyDownEvent) {
+                _pressedKeys.add(event.logicalKey);
+              } else if (event is RawKeyUpEvent) {
+                _pressedKeys.remove(event.logicalKey);
+              }
+            },
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: ElevatedButton(
+                    onPressed: _pauseGame,
+                    child: const Text('Pause'),
+                  ),
                 ),
-              ),
-              Positioned(
-                left: playerX,
-                top: playerY,
-                child: widget.imageBytes != null
-                    ? ClipOval(
-                        child: Image.memory(
-                          widget.imageBytes!,
+                Positioned(
+                  left: playerX,
+                  top: playerY,
+                  child: widget.imageBytes != null
+                      ? ClipOval(
+                          child: Image.memory(
+                            widget.imageBytes!,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Container(
                           width: 50,
                           height: 50,
-                          fit: BoxFit.cover,
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      )
-                    : Container(
-                        width: 50,
-                        height: 50,
+                ),
+                ...enemies.map((enemy) => Positioned(
+                      left: enemy.x,
+                      top: enemy.y,
+                      child: Column(
+                        children: [
+                          Text(
+                            '${enemy.health}',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: enemy.color,
+                                width: 2,
+                              ),
+                            ),
+                            child: enemy.level <= widget.enemyImageBytes.length
+                                ? ClipOval(
+                                    child: Image.memory(
+                                      widget.enemyImageBytes[enemy.level - 1],
+                                      width: 30,
+                                      height: 30,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : Container(
+                                    width: 30,
+                                    height: 30,
+                                    decoration: BoxDecoration(
+                                      color: enemy.color,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    )),
+                ...projectiles.map((projectile) => Positioned(
+                      left: projectile.x,
+                      top: projectile.y,
+                      child: Container(
+                        width: 10,
+                        height: 10,
                         decoration: const BoxDecoration(
-                          color: Colors.blue,
+                          color: Colors.yellow,
                           shape: BoxShape.circle,
                         ),
                       ),
-              ),
-              ...enemies.map((enemy) => Positioned(
-                    left: enemy.x,
-                    top: enemy.y,
-                    child: Column(
-                      children: [
-                        Text(
-                          '${enemy.health}',
-                          style: const TextStyle(color: Colors.white),
+                    )),
+                ...experiencePoints.map((exp) => Positioned(
+                      left: exp.position.dx,
+                      top: exp.position.dy,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: exp.color,
+                          shape: BoxShape.rectangle,
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: enemy.color,
-                              width: 2,
-                            ),
+                      ),
+                    )),
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 200,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: LinearProgressIndicator(
+                            value: playerHealth / 100,
+                            backgroundColor: Colors.grey,
+                            color: Colors.green,
                           ),
-                          child: enemy.level <= widget.enemyImageBytes.length
-                              ? ClipOval(
-                                  child: Image.memory(
-                                    widget.enemyImageBytes[enemy.level - 1],
-                                    width: 30,
-                                    height: 30,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : Container(
-                                  width: 30,
-                                  height: 30,
-                                  decoration: BoxDecoration(
-                                    color: enemy.color,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                        ),
-                      ],
-                    ),
-                  )),
-              ...projectiles.map((projectile) => Positioned(
-                    left: projectile.x,
-                    top: projectile.y,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.yellow,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  )),
-              ...experiencePoints.map((exp) => Positioned(
-                    left: exp.position.dx,
-                    top: exp.position.dy,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: exp.color,
-                        shape: BoxShape.rectangle,
-                      ),
-                    ),
-                  )),
-              Positioned(
-                top: 10,
-                left: 10,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 200,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: playerHealth / 100,
-                          backgroundColor: Colors.grey,
-                          color: Colors.green,
                         ),
                       ),
-                    ),
-                    Text(
-                      '${playerHealth.toInt()}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                      Text(
+                        '${playerHealth.toInt()}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Positioned(
-                top: 40,
-                left: 10,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Enemies: ${enemies.where((enemy) => enemy.isActive).length}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    const SizedBox(height: 5), // Consistent spacing
-                    Text(
-                      'Health: ${playerHealth.toStringAsFixed(1)}',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    const SizedBox(height: 5), // Consistent spacing
-                    Text(
-                      'Level: $playerLevel',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    const SizedBox(height: 5), // Consistent spacing
-                    Text(
-                      'Experience: $experienceCollected/$experienceNeeded',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ],
+                Positioned(
+                  top: 40,
+                  left: 10,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Enemies: ${enemies.where((enemy) => enemy.isActive).length}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 5), // Consistent spacing
+                      Text(
+                        'Health: ${playerHealth.toStringAsFixed(1)}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 5), // Consistent spacing
+                      Text(
+                        'Level: $playerLevel',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 5), // Consistent spacing
+                      Text(
+                        'Experience: $experienceCollected/$experienceNeeded',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Positioned(
-                top: 10,
-                left: MediaQuery.of(context).size.width / 2 - 50,
-                child: Text(
-                  '시간: ${gameTime.toInt()}초', // Display time as integer
-                  style: const TextStyle(color: Colors.white),
+                Positioned(
+                  top: 10,
+                  left: MediaQuery.of(context).size.width / 2 - 50,
+                  child: Text(
+                    '시간: ${gameTime.toInt()}초', // Display time as integer
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-              Positioned(
-                bottom: 10,
-                left: 10,
-                child: Text(
-                  '발사 속도 증가: $fireRateUpgradeCount\n'
-                  '발사 개수 증가: $projectileCountUpgradeCount\n'
-                  '발사 파워 증가: $projectilePowerUpgradeCount',
-                  style: const TextStyle(color: Colors.white),
+                Positioned(
+                  bottom: 10,
+                  left: 10,
+                  child: Text(
+                    '발사 속도 증가: $fireRateUpgradeCount\n'
+                    '발사 개수 증가: $projectileCountUpgradeCount\n'
+                    '발사 파워 증가: $projectilePowerUpgradeCount',
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
