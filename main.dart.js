@@ -52471,15 +52471,15 @@ o.S7()
 o.LC()
 o.LF()},
 S6(){var s,r=this,q=r.CW
-if(q.t(0,B.ac))r.r-=4
-if(q.t(0,B.ad))r.r+=4
-if(q.t(0,B.ak))r.w-=4
-if(q.t(0,B.aj))r.w+=4
-r.r=B.c.de(r.r,-8,8)
-q=B.c.de(r.w,-8,8)
+if(q.t(0,B.ac))r.r-=3.2
+if(q.t(0,B.ad))r.r+=3.2
+if(q.t(0,B.ak))r.w-=3.2
+if(q.t(0,B.aj))r.w+=3.2
+r.r=B.c.de(r.r,-6.4,6.4)
+q=B.c.de(r.w,-6.4,6.4)
 r.w=q
-s=r.r*=0.8
-q*=0.8
+s=r.r*=0.9
+q*=0.9
 r.w=q
 if(Math.abs(s)<0.1)r.r=0
 if(Math.abs(q)<0.1)r.w=0
@@ -52491,8 +52491,8 @@ n=this.f
 m=o-p.a
 l=n-p.b
 k=Math.sqrt(m*m+l*l)
-if(k>0){p.a=p.a+m/k*1.7
-p.b=p.b+l/k*1.7}}}B.b.iD(s,new A.ZB())},
+if(k>0){p.a=p.a+m/k*1.36
+p.b=p.b+l/k*1.36}}}B.b.iD(s,new A.ZB())},
 S7(){var s,r,q,p,o,n,m,l
 for(s=this.ch,r=s.length,q=t.w,p=0;p<s.length;s.length===r||(0,A.C)(s),++p){o=s[p]
 if(o.e){n=o.d

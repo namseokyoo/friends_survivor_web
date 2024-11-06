@@ -205,7 +205,7 @@ class Enemy {
   int level;
   late final int attackPower;
   late final Color color;
-  final double speed = 1.7;
+  final double speed = 1.36; // 적 이동 속도
   bool isActive = true;
   late int health;
 
@@ -319,10 +319,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   double playerY = 100.0;
   double velocityX = 0.0;
   double velocityY = 0.0;
-  final double moveSpeed = 4.0;
-  final double maxSpeed = 8.0;
-  final double friction = 0.8;
-  double playerHealth = 100.0;
+  final double moveSpeed = 3.2; // 플레이어 이동 속도
+  final double maxSpeed = 6.4; // 최대 이동 속도
+  final double friction = 0.9; // 마찰 계수
+  double playerHealth = 100.0; // 플레이어 체력
 
   // Enemy management
   final List<Enemy> enemies = [];
