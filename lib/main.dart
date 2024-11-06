@@ -319,7 +319,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   double playerY = 100.0;
   double velocityX = 0.0;
   double velocityY = 0.0;
-  final double moveSpeed = 3; // 플레이어 이동 속도
+  final double moveSpeed = 2.5; // 플레이어 이동 속도
   final double maxSpeed = 6.4; // 최대 이동 속도
   final double friction = 0.85; // 마찰 계수
   double playerHealth = 100.0; // 플레이어 체력
@@ -328,7 +328,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   final List<Enemy> enemies = [];
   final math.Random random = math.Random();
   double spawnTimer = 0;
-  double spawnInterval = 1.7; // 적이 발생하는 기본 간격 (초 단위)
+  double spawnInterval = 1.5; // 적이 발생하는 기본 간격 (초 단위)
 
   // Projectile management
   final List<Projectile> projectiles = [];
@@ -342,25 +342,25 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // Experience management
   final List<ExperiencePoint> experiencePoints = [];
   int playerLevel = 1;
-  int experienceCollected = 0;
-  int experienceNeeded = 10;
+  int experienceCollected = 0; // 경험치 수집량
+  int experienceNeeded = 10; // 경험치 필요량
 
   // Timer for automatic firing
-  double fireTimer = 0;
-  double fireInterval = 0.5;
+  double fireTimer = 0; // 발사 타이머
+  double fireInterval = 0.7; // 발사 간격
 
   // Weapon upgrade options
-  int projectileCount = 1;
-  double projectilePower = 1.0;
+  int projectileCount = 1; // 발사체 개수
+  double projectilePower = 1.0; // 발사체 데미지
 
-  double maxPlayerHealth = 100.0;
-  int upgradeCount = 0;
-  double gameTime = 0.0;
+  double maxPlayerHealth = 100.0; // 최대 체력
+  int upgradeCount = 0; // 업그레이드 횟수
+  double gameTime = 0.0; // 게임 시간
 
   // Upgrade counts
-  int fireRateUpgradeCount = 0;
-  int projectileCountUpgradeCount = 0;
-  int projectilePowerUpgradeCount = 0;
+  int fireRateUpgradeCount = 0; // 발사 속도 업그레이드 횟수
+  int projectileCountUpgradeCount = 0; // 발사체 개수 업그레이드 횟수
+  int projectilePowerUpgradeCount = 0; // 발사체 데미지 업그레이드 횟수
 
   final FocusNode _focusNode = FocusNode();
 
@@ -384,7 +384,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     projectileCount = 1;
     projectilePower = 1.0;
     fireInterval = 0.5;
-    spawnInterval = 1.7;
+    spawnInterval = 1.5;
     gameTime = 0.0;
     upgradeCount = 0;
     fireRateUpgradeCount = 0;
@@ -400,11 +400,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   void _spawnEnemy(Size screenSize) {
     double x, y;
     if (random.nextBool()) {
-      x = random.nextBool() ? -50 : screenSize.width + 50;
-      y = random.nextDouble() * screenSize.height;
+      x = random.nextBool() ? -50 : screenSize.width + 50; // 왼쪽 또는 오른쪽 끝에서 생성
+      y = random.nextDouble() * screenSize.height; // 랜덤한 위치에서 생성
     } else {
-      x = random.nextDouble() * screenSize.width;
-      y = random.nextBool() ? -50 : screenSize.height + 50;
+      x = random.nextDouble() * screenSize.width; // 랜덤한 위치에서 생성
+      y = random.nextBool() ? -50 : screenSize.height + 50; // 위쪽 또는 아래쪽 끝에서 생성
     }
 
     // 플레이어의 현재 레벨의 적만 생성
@@ -433,8 +433,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
       // 발사체 생성 로직
       if (fireTimer >= fireInterval) {
-        _fireProjectile();
-        fireTimer = 0;
+        _fireProjectile(); // 발사
+        fireTimer = 0; // 발사 타이머 초기화
       }
 
       _updatePlayerPosition();
@@ -465,15 +465,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       velocityY = velocityY.clamp(-maxSpeed, maxSpeed);
       velocityX *= friction;
       velocityY *= friction;
-      if (velocityX.abs() < 0.1) velocityX = 0;
-      if (velocityY.abs() < 0.1) velocityY = 0;
+      if (velocityX.abs() < 0.1) velocityX = 0; // 속도가 매우 작아지면 0으로 설정
+      if (velocityY.abs() < 0.1) velocityY = 0; // 속도가 매우 작아지면 0으로 설정
     }
 
     setState(() {
       playerX += velocityX;
       playerY += velocityY;
-      playerX = playerX.clamp(0, MediaQuery.of(context).size.width - 50);
-      playerY = playerY.clamp(0, MediaQuery.of(context).size.height - 50);
+      playerX = playerX.clamp(
+          0, MediaQuery.of(context).size.width - 50); // 플레이어가 화면 밖으로 나가지 않도록 제한
+      playerY = playerY.clamp(0,
+          MediaQuery.of(context).size.height - 50); // 플레이어가 화면 밖으로 나가지 않도록 제한
     });
   }
 
@@ -481,10 +483,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   void _updateEnemies() {
     for (var enemy in enemies) {
       if (enemy.isActive) {
-        enemy.moveTowardsPlayer(playerX, playerY);
+        enemy.moveTowardsPlayer(playerX, playerY); // 플레이어를 향해 이동
       }
     }
-    enemies.removeWhere((enemy) => !enemy.isActive);
+    enemies.removeWhere((enemy) => !enemy.isActive); // 비활성화된 적 제거
   }
 
   // 사체 위치 업데이트 및 관리
@@ -496,11 +498,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             projectile.y < 0 ||
             projectile.x > MediaQuery.of(context).size.width ||
             projectile.y > MediaQuery.of(context).size.height) {
-          projectile.isActive = false;
+          projectile.isActive = false; // 화면 밖으로 나가면 비활성화
         }
       }
     }
-    projectiles.removeWhere((projectile) => !projectile.isActive);
+    projectiles
+        .removeWhere((projectile) => !projectile.isActive); // 비활성화된 발사체 제거
   }
 
   // 충돌 지 (플레이어-적, 발사체-적)
@@ -546,15 +549,15 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     final dy = playerY - enemy.y;
     final distance = math.sqrt(dx * dx + dy * dy);
     if (distance > 0) {
-      velocityX += (dx / distance) * 10;
-      velocityY += (dy / distance) * 10;
+      velocityX += (dx / distance) * 10; // 플레이어 속도 조절
+      velocityY += (dy / distance) * 10; // 플레이어 속도 조절
     }
   }
 
   // 발사체 생성 및 발사
   void _fireProjectile() {
     if (enemies.isEmpty) return;
-    // Find the closest enemy
+    // 가장 가까운 적 찾기
     Enemy? closestEnemy;
     double closestDistance = double.infinity;
     for (var enemy in enemies) {
@@ -574,13 +577,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       final angle = math.atan2(dy, dx);
       for (int i = 0; i < projectileCount; i++) {
         // 각 발사체에 약간의 각도 변화를 주어 퍼지게 함
-        final spreadAngle = angle + (i - (projectileCount - 1) / 2) * 0.1;
+        final spreadAngle =
+            angle + (i - (projectileCount - 1) / 2) * 0.1; // 각도 변화
         projectiles.add(Projectile(
           x: playerX,
           y: playerY,
-          speed: 7.0,
-          angle: spreadAngle,
-          power: projectilePower,
+          speed: 6.0, // 발사체 속도
+          angle: spreadAngle, // 각도 변화
+          power: projectilePower, // 발사체 데미지
         ));
       }
     }
@@ -684,7 +688,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               });
               Navigator.of(context).pop();
             },
-            child: const Text('최대 력 증'),
+            child: const Text('최대 체력 증가'),
           ),
         ],
       ),
