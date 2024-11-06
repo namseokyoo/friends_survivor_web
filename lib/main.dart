@@ -338,7 +338,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   // Animation controller for game loop
   late Ticker _ticker;
-  Duration _previousTick = Duration.zero;
 
   // Experience management
   final List<ExperiencePoint> experiencePoints = [];
@@ -365,7 +364,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   final FocusNode _focusNode = FocusNode();
 
-  // 게임 상태 관리를 ��한 변수 추가
+  // 게임 상태 관리를 한 변수 추가
   bool _isGamePaused = false;
 
   // 게임 초기화 및 설정
@@ -377,7 +376,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   void _initializeGame() {
     _ticker = createTicker(_gameLoop);
-    _previousTick = Duration.zero;
     playerHealth = 100.0;
     maxPlayerHealth = 100.0;
     playerLevel = 1;
@@ -416,17 +414,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // 메인 게임 루프 - 매 프레임마다 실행
   void _gameLoop(Duration elapsed) {
     if (_isGamePaused) {
-      _previousTick = elapsed; // 일시정지 중에는 경과 시간 업데이트만
       return;
     }
 
-    final deltaTime = (elapsed - _previousTick).inMilliseconds / 1000.0;
-    _previousTick = elapsed;
+    // 고정된 델타 타임 사용 (예: 1/60초)
+    const fixedDeltaTime = 1 / 60;
 
     setState(() {
-      gameTime += deltaTime;
-      spawnTimer += deltaTime;
-      fireTimer += deltaTime;
+      gameTime += fixedDeltaTime;
+      spawnTimer += fixedDeltaTime;
+      fireTimer += fixedDeltaTime;
 
       // 적 생성 로직
       if (spawnTimer >= spawnInterval) {
@@ -506,7 +503,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     projectiles.removeWhere((projectile) => !projectile.isActive);
   }
 
-  // 충돌 ���지 (플레이어-적, 발사체-적)
+  // 충돌 지 (플레이어-적, 발사체-적)
   void _checkCollisions() {
     for (var enemy in enemies) {
       if (enemy.isActive && enemy.checkCollision(playerX, playerY)) {
@@ -764,7 +761,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       experiencePoints.clear();
 
       // 타이머 관련 변수 초기화
-      _previousTick = Duration.zero;
       spawnTimer = 0;
       fireTimer = 0;
 
@@ -773,16 +769,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         _ticker.start();
       }
     });
-  }
-
-  // 업그레이드 옵션 선택 후 게임 재개
-  void _resumeGame() {
-    setState(() {
-      _isGamePaused = false;
-    });
-    if (!_ticker.isActive) {
-      _ticker.start();
-    }
   }
 
   // 게임 일시정지
