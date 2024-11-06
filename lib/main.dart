@@ -418,7 +418,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     }
 
     // 고정된 델타 타임 사용 (예: 1/60초)
-    const fixedDeltaTime = 1 / 60;
+    const fixedDeltaTime = 1 / 80;
 
     setState(() {
       gameTime += fixedDeltaTime;

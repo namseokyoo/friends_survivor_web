@@ -52577,9 +52577,9 @@ l.push(A.fE(10,A.l5("\ubc1c\uc0ac \uc18d\ub3c4 \uc99d\uac00: "+p.k3+"\n\ubc1c\uc
 return A.a94(A.a3Y(o,A.eJ(o,new A.r5(p.p1,!0,new A.ZL(p),A.Bq(B.er,l,B.ee),o),B.B,B.m,o,o,o,o,o,o),B.cc,!1,o,o,o,o,o,o,o,o,new A.ZM(p,a),o,o,o,o,o,o,o,o))}}
 A.Zb.prototype={
 $0(){var s,r,q,p,o=this.a
-o.k2+=0.016666666666666666
-s=o.ax+=0.016666666666666666
-o.fr+=0.016666666666666666
+o.k2+=0.0125
+s=o.ax+=0.0125
+o.fr+=0.0125
 if(s>=o.ay){s=o.c
 s.toString
 s=A.bN(s,null,t.w).w.a
