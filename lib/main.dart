@@ -205,7 +205,7 @@ class Enemy {
   int level;
   late final int attackPower;
   late final Color color;
-  final double speed = 1.36; // 적 이동 속도
+  final double speed = 1.2; // 적 이동 속도
   bool isActive = true;
   late int health;
 
@@ -319,9 +319,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   double playerY = 100.0;
   double velocityX = 0.0;
   double velocityY = 0.0;
-  final double moveSpeed = 3.2; // 플레이어 이동 속도
+  final double moveSpeed = 3; // 플레이어 이동 속도
   final double maxSpeed = 6.4; // 최대 이동 속도
-  final double friction = 0.9; // 마찰 계수
+  final double friction = 0.85; // 마찰 계수
   double playerHealth = 100.0; // 플레이어 체력
 
   // Enemy management
@@ -365,11 +365,37 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   final FocusNode _focusNode = FocusNode();
 
+  // 게임 상태 관리를 ��한 변수 추가
+  bool _isGamePaused = false;
+
   // 게임 초기화 및 설정
   @override
   void initState() {
     super.initState();
-    _ticker = createTicker(_gameLoop)..start();
+    _initializeGame();
+  }
+
+  void _initializeGame() {
+    _ticker = createTicker(_gameLoop);
+    _previousTick = Duration.zero;
+    playerHealth = 100.0;
+    maxPlayerHealth = 100.0;
+    playerLevel = 1;
+    experienceCollected = 0;
+    experienceNeeded = 10;
+    projectileCount = 1;
+    projectilePower = 1.0;
+    fireInterval = 0.5;
+    spawnInterval = 1.7;
+    gameTime = 0.0;
+    upgradeCount = 0;
+    fireRateUpgradeCount = 0;
+    projectileCountUpgradeCount = 0;
+    projectilePowerUpgradeCount = 0;
+    enemies.clear();
+    projectiles.clear();
+    experiencePoints.clear();
+    _ticker.start();
   }
 
   // 적 생성 함수
@@ -389,34 +415,37 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   // 메인 게임 루프 - 매 프레임마다 실행
   void _gameLoop(Duration elapsed) {
+    if (_isGamePaused) {
+      _previousTick = elapsed; // 일시정지 중에는 경과 시간 업데이트만
+      return;
+    }
+
     final deltaTime = (elapsed - _previousTick).inMilliseconds / 1000.0;
     _previousTick = elapsed;
 
-    // 게임 로직 업데이트
-    spawnTimer += deltaTime;
-    fireTimer += deltaTime;
-    gameTime += deltaTime;
+    setState(() {
+      gameTime += deltaTime;
+      spawnTimer += deltaTime;
+      fireTimer += deltaTime;
 
-    // 50초마다 적 생성 간격 감소
-    if (gameTime % 50 < deltaTime) {
-      setState(() {
-        spawnInterval = math.max(0.5, spawnInterval - 0.2);
-      });
-    }
+      // 적 생성 로직
+      if (spawnTimer >= spawnInterval) {
+        _spawnEnemy(MediaQuery.of(context).size);
+        spawnTimer = 0;
+      }
 
-    if (spawnTimer >= spawnInterval) {
-      _spawnEnemy(MediaQuery.of(context).size);
-      spawnTimer = 0;
-    }
-    if (fireTimer >= fireInterval) {
-      _fireProjectile();
-      fireTimer = 0;
-    }
-    _updatePlayerPosition();
-    _updateEnemies();
-    _updateProjectiles();
-    _checkCollisions();
-    _checkExperienceCollection();
+      // 발사체 생성 로직
+      if (fireTimer >= fireInterval) {
+        _fireProjectile();
+        fireTimer = 0;
+      }
+
+      _updatePlayerPosition();
+      _updateEnemies();
+      _updateProjectiles();
+      _checkCollisions();
+      _checkExperienceCollection();
+    });
   }
 
   // 플레이어 위치 업데이트 및 이동 처리
@@ -477,7 +506,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     projectiles.removeWhere((projectile) => !projectile.isActive);
   }
 
-  // 충돌 감지 (플레이어-적, 발사체-적)
+  // 충돌 ���지 (플레이어-적, 발사체-적)
   void _checkCollisions() {
     for (var enemy in enemies) {
       if (enemy.isActive && enemy.checkCollision(playerX, playerY)) {
@@ -582,7 +611,16 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   // 레벨업 시 업그레이드 옵션 표시
   void _showUpgradeOptions() {
-    _ticker.stop(); // 게임 일시 중지
+    setState(() {
+      _isGamePaused = true;
+      velocityX = 0;
+      velocityY = 0;
+      _pressedKeys.clear();
+
+      // 레벨업 시 난이도 조정
+      _adjustDifficulty();
+    });
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -593,12 +631,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           TextButton(
             onPressed: () {
               setState(() {
-                fireInterval = (fireInterval * 0.9).clamp(0.1, double.infinity);
+                fireInterval = math.max(0.1, fireInterval * 0.9);
                 fireRateUpgradeCount++;
                 upgradeCount++;
+                _isGamePaused = false;
+                _pressedKeys.clear(); // 키 입력 상태 다시 한번 초기화
               });
               Navigator.of(context).pop();
-              _resumeGame(); // 게임 재개
             },
             child: const Text('발사 속도 증가'),
           ),
@@ -608,9 +647,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 projectileCount++;
                 projectileCountUpgradeCount++;
                 upgradeCount++;
+                _isGamePaused = false;
               });
               Navigator.of(context).pop();
-              _resumeGame(); // 게임 재개
             },
             child: const Text('발사 개수 증가'),
           ),
@@ -620,9 +659,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 projectilePower += 1.0;
                 projectilePowerUpgradeCount++;
                 upgradeCount++;
+                _isGamePaused = false;
               });
               Navigator.of(context).pop();
-              _resumeGame(); // 게임 재개
             },
             child: const Text('발사 파워 증가'),
           ),
@@ -631,9 +670,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               setState(() {
                 playerHealth = maxPlayerHealth; // Fully heal to max health
                 upgradeCount++;
+                _isGamePaused = false;
               });
               Navigator.of(context).pop();
-              _resumeGame(); // 게임 재개
             },
             child: const Text('체력 회복'),
           ),
@@ -644,15 +683,22 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                 playerHealth = (playerHealth + 5).clamp(
                     0, maxPlayerHealth); // Increase max health and heal by 5
                 upgradeCount++;
+                _isGamePaused = false;
               });
               Navigator.of(context).pop();
-              _resumeGame(); // 임 재개
             },
-            child: const Text('최대 력 증가'),
+            child: const Text('최대 력 증'),
           ),
         ],
       ),
     );
+  }
+
+  // 새로운 메서드 추가
+  void _adjustDifficulty() {
+    // 레벨에 따라 적 생성 간격 감소 (0.05초씩)
+    // 최소 0.5초까지만 감소하도록 제한
+    spawnInterval = math.max(0.5, 1.7 - ((playerLevel - 1) * 0.03));
   }
 
   // 게임 오버 처리
@@ -690,44 +736,60 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // 게임 재시작
   void _restartGame() {
     setState(() {
+      // 모든 게임 변수 초기화
       playerX = 100.0;
       playerY = 100.0;
       velocityX = 0.0;
       velocityY = 0.0;
-      playerHealth = maxPlayerHealth;
-      enemies.clear();
-      projectiles.clear();
-      experiencePoints.clear();
-      spawnTimer = 0;
-      fireTimer = 0;
-      gameTime = 0.0;
+      playerHealth = 100.0;
+      maxPlayerHealth = 100.0;
       playerLevel = 1;
       experienceCollected = 0;
       experienceNeeded = 10;
+      projectileCount = 1;
+      projectilePower = 1.0;
+      fireInterval = 0.5;
+      spawnInterval = 1.7;
+      gameTime = 0.0;
+      upgradeCount = 0;
       fireRateUpgradeCount = 0;
       projectileCountUpgradeCount = 0;
       projectilePowerUpgradeCount = 0;
-      projectileCount = 1;
-      projectilePower = 1.0;
-      spawnInterval = 1.7;
-      _pressedKeys.clear(); // 키보드 입력 상태 초기화
+      _isGamePaused = false;
+      _pressedKeys.clear();
+
+      // 게임 오브젝트 초기화
+      enemies.clear();
+      projectiles.clear();
+      experiencePoints.clear();
+
+      // 타이머 관련 변수 초기화
+      _previousTick = Duration.zero;
+      spawnTimer = 0;
+      fireTimer = 0;
+
+      // 게임 루프 재시작
+      if (!_ticker.isActive) {
+        _ticker.start();
+      }
     });
-    _ticker.start();
   }
 
   // 업그레이드 옵션 선택 후 게임 재개
   void _resumeGame() {
     setState(() {
-      velocityX = 0.0;
-      velocityY = 0.0;
-      _pressedKeys.clear(); // 키보드 입력 상태 초기화
+      _isGamePaused = false;
     });
-    _ticker.start();
+    if (!_ticker.isActive) {
+      _ticker.start();
+    }
   }
 
   // 게임 일시정지
   void _pauseGame() {
-    _ticker.stop();
+    setState(() {
+      _isGamePaused = true;
+    });
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -738,7 +800,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _ticker.start();
+              setState(() {
+                _isGamePaused = false; // 게임 상태를 재개로 변경
+                if (!_ticker.isActive) {
+                  _ticker.start(); // 티커 재시작
+                }
+              });
             },
             child: const Text('계속'),
           ),
