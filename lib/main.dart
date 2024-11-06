@@ -60,6 +60,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontFamily: 'Cursive',
                 ),
               ),
+              const Text(
+                'v0.2',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Cursive',
+                ),
+              ),
               const SizedBox(height: 50),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -418,7 +427,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     }
 
     // 고정된 델타 타임 사용 (예: 1/60초)
-    const fixedDeltaTime = 1 / 80;
+    const fixedDeltaTime = 1 / 90;
 
     setState(() {
       gameTime += fixedDeltaTime;
