@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 // import 'dart:io';
 import 'dart:math' as math;
+import 'package:flutter/scheduler.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -336,7 +337,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   final Set<LogicalKeyboardKey> _pressedKeys = {};
 
   // Animation controller for game loop
-  late AnimationController _gameLoopController;
+  late Ticker _ticker;
+  Duration _previousTick = Duration.zero;
 
   // Experience management
   final List<ExperiencePoint> experiencePoints = [];
@@ -367,11 +369,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _gameLoopController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 1),
-    )..repeat();
-    _gameLoopController.addListener(_gameLoop);
+    _ticker = createTicker(_gameLoop)..start();
   }
 
   // 적 생성 함수
@@ -390,22 +388,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   // 메인 게임 루프 - 매 프레임마다 실행
-  void _gameLoop() {
-    final size = MediaQuery.of(context).size;
-    spawnTimer += 0.016;
-    fireTimer += 0.016;
-    gameTime += 0.016; // Increment game time
+  void _gameLoop(Duration elapsed) {
+    final deltaTime = (elapsed - _previousTick).inMilliseconds / 1000.0;
+    _previousTick = elapsed;
+
+    // 게임 로직 업데이트
+    spawnTimer += deltaTime;
+    fireTimer += deltaTime;
+    gameTime += deltaTime;
 
     // 50초마다 적 생성 간격 감소
-    if (gameTime % 50 < 0.016) {
-      // 50초마다 실행
+    if (gameTime % 50 < deltaTime) {
       setState(() {
-        spawnInterval = math.max(0.5, spawnInterval - 0.2); // 최소값 0.5 유지
+        spawnInterval = math.max(0.5, spawnInterval - 0.2);
       });
     }
 
     if (spawnTimer >= spawnInterval) {
-      _spawnEnemy(size);
+      _spawnEnemy(MediaQuery.of(context).size);
       spawnTimer = 0;
     }
     if (fireTimer >= fireInterval) {
@@ -582,7 +582,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   // 레벨업 시 업그레이드 옵션 표시
   void _showUpgradeOptions() {
-    _gameLoopController.stop(); // 게임 일시 중지
+    _ticker.stop(); // 게임 일시 중지
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -657,7 +657,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
 
   // 게임 오버 처리
   void _gameOver() {
-    _gameLoopController.stop();
+    _ticker.stop();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -712,7 +712,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       spawnInterval = 1.7;
       _pressedKeys.clear(); // 키보드 입력 상태 초기화
     });
-    _gameLoopController.repeat();
+    _ticker.start();
   }
 
   // 업그레이드 옵션 선택 후 게임 재개
@@ -722,12 +722,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       velocityY = 0.0;
       _pressedKeys.clear(); // 키보드 입력 상태 초기화
     });
-    _gameLoopController.repeat();
+    _ticker.start();
   }
 
   // 게임 일시정지
   void _pauseGame() {
-    _gameLoopController.stop();
+    _ticker.stop();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -738,7 +738,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _gameLoopController.repeat();
+              _ticker.start();
             },
             child: const Text('계속'),
           ),
@@ -767,7 +767,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // 리소스 정리
   @override
   void dispose() {
-    _gameLoopController.dispose();
+    _ticker.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -897,7 +897,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     alignment: Alignment.center,
                     children: [
                       Container(
-                        width: 200,
+                        width: 150,
                         height: 20,
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.white),
